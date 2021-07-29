@@ -10,7 +10,7 @@ class cell():
         self.y = y
         self.mu = mu
         self.sigma = sigma
-        self.
+        self.coor = [self.x, self.y]
 
 class AR_agent():
     def __init__(self, env, beta, n_samples, init_radius, directory, threshold_gain, threshold_loss, deltaParam):
@@ -27,32 +27,59 @@ class AR_agent():
         self.visited = []
         self.sampled_depths = []
         self.kernel = ConstantKernel(1.0, (1e-4, 1e4)) * RBF(1.0, (1e-4, 1e4))
-        self.gpr = GaussianProcessRegressor(kernel=self.kernel) #, n_restarts_optimizer=5
+        self.gpr = GaussianProcessRegressor(kernel=self.kernel, n_restarts_optimizer=5) #, n_restarts_optimizer=5
 
         self.samples = 0
         self.mu = np.zeros(self.grid.shape[0])
         self.sigma = 0.5 * np.ones(self.grid.shape[0])
+        self.update_mesh()
+
+    def find_idx(self, coordinates):
+        x = coordinates[0]
+        y = coordinates[1]
+        idx = [0, 0]
+        
+        for i in range(self.meshgrid[0].shape[1]):
+            if x==self.meshgrid[0][0][i]:
+                idx[1] = i
+                break
+            
+        for j in range(self.meshgrid[1].shape[0]):
+            if y==self.meshgrid[1][j][0]:
+                idx[0] = j
+                break
+        return idx
+
+    def update_mesh(self):
+        self.mu = self.mu.reshape(self.meshgrid[0].shape)
+        self.sigma = self.sigma.reshape(self.meshgrid[0].shape)
+        if self.samples == 0:
+            self.meshgrid.append(self.mu)
+            self.meshgrid.append(self.sigma)
+        else:
+            self.meshgrid[2] = self.mu
+            self.meshgrid[3] = self.sigma
+
 
     def get_next_coordinates(self):
-        # min_mu = min(self.mu)
-        # min_sigma = min(self.sigma)
-        # optimise the code here
+        idx = self.find_idx(self.curr_coor)
         max_h = np.NINF
-        for i in range(len(self.mu)):
-            if (np.hypot((self.curr_coor[0]-self.grid[i][0]), (self.curr_coor[1]-self.grid[i][1])) < self.rad):
-                if (self.mu[i] + self.sigma[i] * np.sqrt(self.beta) > max_h):
-                    print(max_h)
-                    max_h = self.mu[i] + self.sigma[i] * np.sqrt(self.beta)
-                    idx =  i
 
-        predicted = self.mu[idx]
-        ground_truth = self.sample(self.grid[idx])
+        for i in range(idx[0]-self.rad, idx[0]+self.rad+1):
+            for j in range(idx[1]-self.rad, idx[1]+self.rad+1):
+                if (0<=i<self.meshgrid[0].shape[0] and 0<=j<self.meshgrid[0].shape[1]):
+                    if (self.meshgrid[2][i][j] + (self.meshgrid[3][i][j]*np.sqrt(self.beta)) > max_h):
+                        max_h = self.meshgrid[2][i][j] + (self.meshgrid[3][i][j]*np.sqrt(self.beta))
+                        new_idx = [i,j]
+
+        predicted = self.meshgrid[2][new_idx[0]][new_idx[1]]
+        ground_truth = self.sample([self.meshgrid[0][new_idx[0]][new_idx[1]], self.meshgrid[1][new_idx[0]][new_idx[1]]])
         if (abs(ground_truth - predicted) > self.thresh_gain):
             self.rad -= self.deltaParam
         elif (abs(ground_truth - predicted) < self.thresh_loss):
             self.rad += self.deltaParam
 
-        return self.grid[idx]
+        return [self.meshgrid[0][new_idx[0]][new_idx[1]], self.meshgrid[1][new_idx[0]][new_idx[1]]]
 
     def learn(self, coordinates):
         self.samples += 1
@@ -61,6 +88,7 @@ class AR_agent():
         self.sampled_depths.append(self.sample(coordinates))
         self.gpr.fit(self.visited, self.sampled_depths)
         self.mu, self.sigma = self.gpr.predict(self.grid, return_std=True)
+        self.update_mesh()
         self.plot()
         return (self.get_next_coordinates(), self.samples==self.n_samples)
 

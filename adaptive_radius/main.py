@@ -1,5 +1,5 @@
 import numpy as np
-from ar_agent import AR_agent
+from ar_agent_mod import AR_agent
 from env import environment
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import pyplot as plt
@@ -15,8 +15,8 @@ parser.add_argument("--beta", help="hyperparameter that dictates exploration vs.
                     default=100., type=float)
 parser.add_argument("--thresh_gain", help="threshold for information gain", default=0.50, type=float)
 parser.add_argument("--thresh_loss", help="threshold for information loss", default=0.25, type=float)
-parser.add_argument("--del_rad", help="change to be made in the radius", default=0.5, type=float)
-parser.add_argument("--init_rad", help="initial radius", default=0.5, type=float)
+parser.add_argument("--del_rad", help="change to be made in the radius", default=4, type=int)
+parser.add_argument("--init_rad", help="initial radius", default=2, type=int)
 parser.add_argument("--name", help="give a name to the experiment", 
                     default=None, type=str)
 args = parser.parse_args()
