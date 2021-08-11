@@ -18,6 +18,8 @@ class mesh:
         self.grid = np.c_[self.meshgrid[0].ravel(), self.meshgrid[1].ravel()]
         self.mu = np.zeros(self.grid.shape[0])
         self.sigma = 0.5 * np.ones(self.grid.shape[0])
+        self.visited = []
+        self.sampled_depths = []
 
 
 def plot(meshgrid, agent, n_sample):
@@ -30,9 +32,12 @@ def plot(meshgrid, agent, n_sample):
                       env_sample(meshgrid.meshgrid), alpha=0.5, color='b')
     markers = ['o', '^', 's']
     color = ['black', 'lightcoral', 'magenta']
-    for idx, a in enumerate(agent):
-        ax.scatter([x[0] for x in a.visited], [x[1] for x in a.visited], a.sampled_depths, c=color[idx],
-                   marker=markers[idx], alpha=1.0)
+    # for idx, a in enumerate(agent):
+    #     ax.scatter([x[0] for x in a.visited], [x[1] for x in a.visited], a.sampled_depths, c=color[idx],
+    #                marker=markers[idx], alpha=1.0)
+    for idx in range(len(agent)):
+        ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], agent[idx].sampled_depths, c=color[idx],
+                   marker=markers[idx], alpha=1.0, s=70)
     plt.savefig(directory+"/"+str(n_sample)+".png")
     # plt.show()
 
@@ -89,8 +94,9 @@ if __name__ == "__main__":
     init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
 
     meshgrid = mesh()
-    agents = [GPUCB_agent(mesh=meshgrid, env_sample=env_sample,
-                          beta=args.beta, n_samples=args.n, directory=directory)]*3
+    agents = []
+    for i in range(args.n_agents):
+        agents.append(GPUCB_agent(mesh=meshgrid, env_sample=env_sample, beta=args.beta, n_samples=args.n, directory=directory))
 
     for _ in range(args.n):
         for i in range(len(agents)):

@@ -26,7 +26,10 @@ class GPUCB_agent():
         self.samples += 1
         self.visited.append(coordinates)
         self.sampled_depths.append(self.sample(coordinates))
-        self.gpr.fit(self.visited, self.sampled_depths)
+
+        self.meshgrid.visited.append(coordinates)
+        self.meshgrid.sampled_depths.append(self.sample(coordinates))
+        self.gpr.fit(self.meshgrid.visited, self.meshgrid.sampled_depths)
         self.meshgrid.mu, self.meshgrid.sigma = self.gpr.predict(
             self.meshgrid.grid, return_std=True)
 
