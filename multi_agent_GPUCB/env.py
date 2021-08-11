@@ -10,5 +10,6 @@ class environment():
     def sample(self, coordinates):
         return np.sin(coordinates[0])+np.cos(coordinates[1])
 
+
 def env_sample(coordinates):
     return np.sin(coordinates[0])+np.cos(coordinates[1])
