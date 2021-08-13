@@ -1,4 +1,3 @@
-from operator import truth
 import numpy as np
 from ar_agent_mod import AR_agent
 from env import env_sample
@@ -50,7 +49,7 @@ def plot(meshgrid, agent, n_sample):
     for idx in range(len(agent)):
         ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], agent[idx].sampled_depths, c=color[idx],
                    marker=markers[idx], alpha=1.0, s=70)
-    plt.savefig(directory+"/"+str(n_sample)+".png")
+    plt.savefig(directory+"/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
     # plt.show()
 
 
