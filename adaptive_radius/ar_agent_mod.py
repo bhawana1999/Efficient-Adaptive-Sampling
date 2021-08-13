@@ -71,7 +71,12 @@ class AR_agent():
                     if (self.meshgrid[2][i][j] + (self.meshgrid[3][i][j]*np.sqrt(self.beta)) > max_h):
                         max_h = self.meshgrid[2][i][j] + (self.meshgrid[3][i][j]*np.sqrt(self.beta))
                         new_idx = [i,j]
-
+        
+        # This section below, should ideally be in the learn function
+        # Otherwise we are assuming that we already know the ground truth
+        # The ground truth at the new idx should be calculated in when the agents gets the command
+        # to take a reading from the main function.
+        # hence the radius change will occur in the learn function
         predicted = self.meshgrid[2][new_idx[0]][new_idx[1]]
         ground_truth = self.sample([self.meshgrid[0][new_idx[0]][new_idx[1]], self.meshgrid[1][new_idx[0]][new_idx[1]]])
         if (abs(ground_truth - predicted) > self.thresh_gain):

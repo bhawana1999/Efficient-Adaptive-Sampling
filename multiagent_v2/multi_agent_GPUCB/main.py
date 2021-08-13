@@ -9,6 +9,57 @@ import argparse
 import os
 import warnings
 
+###### Code to find if 2 line segments intersect ######
+# https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+def onSegment(p, q, r):
+    if ((q.x <= max(p.x, r.x)) and (q.x >= min(p.x, r.x)) and
+            (q.y <= max(p.y, r.y)) and (q.y >= min(p.y, r.y))):
+        return True
+    return False
+
+
+def orientation(p, q, r):
+    val = (float(q.y - p.y) * (r.x - q.x)) - (float(q.x - p.x) * (r.y - q.y))
+    if (val > 0):
+        return 1
+    elif (val < 0):
+        return 2
+    else:
+        return 0
+
+
+def doIntersect(p1, q1, p2, q2):
+    o1 = orientation(p1, q1, p2)
+    o2 = orientation(p1, q1, q2)
+    o3 = orientation(p2, q2, p1)
+    o4 = orientation(p2, q2, q1)
+
+    if ((o1 != o2) and (o3 != o4)):
+        return True
+
+    if ((o1 == 0) and onSegment(p1, p2, q1)):
+        return True
+
+    if ((o2 == 0) and onSegment(p1, q2, q1)):
+        return True
+
+    if ((o3 == 0) and onSegment(p2, p1, q2)):
+        return True
+
+    if ((o4 == 0) and onSegment(p2, q1, q2)):
+        return True
+
+    return False
+###### Code to find if 2 line segments intersect ######
+
 
 class mesh:
     def __init__(self):
@@ -37,7 +88,13 @@ def plot(meshgrid, agent, n_sample):
     # plt.show()
 
 
-def get_cors(meshgrid, agents, beta):
+def get_cors(agents, cors):
+    pos = []
+    for a in agents:
+        pos.append(a.visited[-1])
+
+
+
     grid = meshgrid.grid.copy()
     mu = meshgrid.mu.copy()
     sigma = meshgrid.sigma.copy()
@@ -52,20 +109,6 @@ def get_cors(meshgrid, agents, beta):
             mu[np.argmax(mu + sigma * np.sqrt(beta))] = np.NINF
 
     return cor
-
-
-def allocate_cors(agents, cors):
-    new_cors = []
-    cors = cors.copy()
-    for a in agents:
-        x, y = a.visited[-1][0], a.visited[-1][1]
-        dist = []
-        for c in cors:
-            dist.append(np.hypot((x-c[0]), (y-c[1])))
-        idx = np.argmin(dist)
-        new_cors.append(cors[idx])
-        _ = cors.pop(idx)
-    return new_cors
 
 
 if __name__ == "__main__":
@@ -89,11 +132,14 @@ if __name__ == "__main__":
     init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
 
     meshgrid = mesh()
-    agents = [GPUCB_agent(mesh=meshgrid, env_sample=env_sample,
-                          beta=args.beta, n_samples=args.n, directory=directory)]*3
+    agents = []
+    for i in range(3):
+        agents.append(GPUCB_agent(mesh=meshgrid, env_sample=env_sample,
+                      beta=args.beta, n_samples=args.n, directory=directory))
 
     for _ in range(args.n):
+        returned_cors = []
         for i in range(len(agents)):
-            agents[i].learn(init_cor[i])
-        init_cor = get_cors(meshgrid, agents, args.beta)
+            returned_cors.append(agents[i].learn(init_cor[i]))
+        init_cor = get_cors(agents, returned_cors)
         plot(meshgrid, agents, _)

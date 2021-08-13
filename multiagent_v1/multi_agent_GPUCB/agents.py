@@ -18,7 +18,7 @@ class GPUCB_agent():
         self.sampled_depths = []
         self.kernel = ConstantKernel(1.0, (1e-4, 1e4)) * RBF(1.0, (1e-4, 1e4))
         self.gpr = GaussianProcessRegressor(
-            kernel=self.kernel)  # , n_restarts_optimizer=5
+            kernel=self.kernel, n_restarts_optimizer=5)  # , n_restarts_optimizer=5
 
         self.samples = 0
 

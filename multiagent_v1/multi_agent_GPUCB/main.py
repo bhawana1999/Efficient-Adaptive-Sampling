@@ -56,21 +56,28 @@ def get_cors(meshgrid, agents, beta):
         for __ in range(2000):
             mu[np.argmax(mu + sigma * np.sqrt(beta))] = np.NINF
 
+    cor = allocate_cors(agents, cor)
+
     return cor
 
 
 def allocate_cors(agents, cors):
-    new_cors = []
-    cors = cors.copy()
-    for a in agents:
-        x, y = a.visited[-1][0], a.visited[-1][1]
-        dist = []
-        for c in cors:
-            dist.append(np.hypot((x-c[0]), (y-c[1])))
-        idx = np.argmin(dist)
-        new_cors.append(cors[idx])
-        _ = cors.pop(idx)
-    return new_cors
+    n = len(agents)
+    dist_mat = np.zeros((n,n))
+    for i in range(n):
+        for j in range(n):
+            x, y = cors[j][0], cors[j][1]
+            X, Y = agents[i].visited[-1][0], agents[i].visited[-1][1]
+            dist_mat[i][j] = np.hypot(x-X, y-Y)
+
+    new_cor = [0]*n
+    for _ in range(n):
+        i, j = np.unravel_index(dist_mat.argmin(), dist_mat.shape)
+        new_cor[i] = cors[j]
+        dist_mat[i,:] = 1e6
+        dist_mat[:,j] = 1e6
+    
+    return new_cor
 
 
 if __name__ == "__main__":
