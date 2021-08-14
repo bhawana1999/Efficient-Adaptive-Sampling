@@ -12,4 +12,4 @@ class environment():
 
 
 def env_sample(coordinates):
-    return np.sinc(coordinates[0])+np.sin(coordinates[1])
+    return np.sinc(coordinates[0])+np.sin(coordinates[1])+2

@@ -45,17 +45,21 @@ class AR_agent():
 
     def get_next_coordinates(self):
         idx = self.find_idx(self.curr_coor)
-        max_h = np.NINF
+        meshgrid = self.meshgrid.meshgrid.copy()
 
-        for i in range(idx[0]-self.rad, idx[0]+self.rad+1):
-            for j in range(idx[1]-self.rad, idx[1]+self.rad+1):
-                if (0 <= i < self.meshgrid.meshgrid[0].shape[0] and 0 <= j < self.meshgrid.meshgrid[0].shape[1]):
-                    if (self.meshgrid.meshgrid[2][i][j] + (self.meshgrid.meshgrid[3][i][j]*np.sqrt(self.beta)) > max_h):
-                        max_h = self.meshgrid.meshgrid[2][i][j] + \
-                            (self.meshgrid.meshgrid[3][i][j]*np.sqrt(self.beta))
-                        new_idx = [i, j]
-
-        return [self.meshgrid.meshgrid[0][new_idx[0]][new_idx[1]], self.meshgrid.meshgrid[1][new_idx[0]][new_idx[1]]]
+        while True:
+            max_h = np.NINF
+            for i in range(idx[0]-self.rad, idx[0]+self.rad+1):
+                for j in range(idx[1]-self.rad, idx[1]+self.rad+1):
+                    if (0 <= i < meshgrid[0].shape[0] and 0 <= j < meshgrid[0].shape[1]):
+                        if (meshgrid[2][i][j] + (meshgrid[3][i][j]*np.sqrt(self.beta)) > max_h):
+                            max_h = meshgrid[2][i][j] + (meshgrid[3][i][j]*np.sqrt(self.beta))
+                            new_idx = [i, j]
+            if [self.meshgrid.meshgrid[0][new_idx[0]][new_idx[1]], self.meshgrid.meshgrid[1][new_idx[0]][new_idx[1]]] not in self.meshgrid.occupied_coordinates:
+                self.meshgrid.occupied_coordinates.append([self.meshgrid.meshgrid[0][new_idx[0]][new_idx[1]], self.meshgrid.meshgrid[1][new_idx[0]][new_idx[1]]])
+                return [self.meshgrid.meshgrid[0][new_idx[0]][new_idx[1]], self.meshgrid.meshgrid[1][new_idx[0]][new_idx[1]]]
+            else:
+                meshgrid[2][new_idx[0]][new_idx[1]] = np.NINF
 
     def update_radius(self, pred, truth):
         if (abs(truth - pred) > self.thresh_gain):

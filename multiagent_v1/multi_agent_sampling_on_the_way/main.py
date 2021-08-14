@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.random import default_rng
 from sow_agent import SOW_agent
 from env import env_sample
 from mpl_toolkits.mplot3d import Axes3D
@@ -37,6 +38,24 @@ def plot(meshgrid, agent, n_sample):
         ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], agent[idx].sampled_depths, c=color[idx],
                    marker=markers[idx], alpha=1.0, s=70)
     plt.savefig(directory+"/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
+    # plt.show()
+
+def plot_sigma(meshgrid, agent, n_sample):
+    fig = plt.figure(figsize=(10, 10))
+    # ax = Axes3D(fig)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_wireframe(meshgrid.meshgrid[0], meshgrid.meshgrid[1],
+                      meshgrid.sigma.reshape(meshgrid.meshgrid[0].shape), alpha=0.5, color='g')
+    ax.set_zlim3d(0, 2)
+    markers = ['o', '^', 's']
+    color = ['black', 'lightcoral', 'magenta']
+    # for idx, a in enumerate(agent):
+    #     ax.scatter([x[0] for x in a.visited], [x[1] for x in a.visited], a.sampled_depths, c=color[idx],
+    #                marker=markers[idx], alpha=1.0)
+    for idx in range(len(agent)):
+        ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited],  c=color[idx],
+                   marker=markers[idx], alpha=1.0, s=70)
+    plt.savefig(directory+"_sigma/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
     # plt.show()
 
 
@@ -88,16 +107,21 @@ if __name__=="__main__":
         "--n_agents", help="number of agents", default=3, type=int)
     parser.add_argument("--osp", help="On the way sampling parameter", default=0.25, type=float)
     parser.add_argument("--beta", help="hyperparameter that dictates exploration vs. exploitation", 
-                        default=100., type=float)
+                        default=500., type=float)
     parser.add_argument("--name", help="give a name to the experiment", 
                         default=None, type=str)
     args = parser.parse_args()
 
     directory = "output/" + args.name + "_samples_" + str(args.n)\
                 if args.name != None else "output/" + "samples_" + str(args.n)
+
+    directory_sigma = "output/" + args.name + "_samples_" + str(args.n)+"_sigma"\
+                if args.name != None else "output/" + "samples_" + str(args.n)+"_sigma"
     os.makedirs(directory, exist_ok = True)
+    os.makedirs(directory_sigma, exist_ok=True)
 
     init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
+    # init_cor = [[-3, -3], [0, -3], [2.9, -3]]
 
     meshgrid = mesh()
     agents = []
@@ -105,7 +129,10 @@ if __name__=="__main__":
         agents.append(SOW_agent(mesh=meshgrid, env_sample=env_sample, beta=args.beta, n_samples=args.n, directory=directory, osp=args.osp))
 
     for _ in range(args.n):
-        for i in range(len(agents)):
+        rng = default_rng()
+        idxs = rng.choice(3, size=3, replace=False)
+        for i in idxs:
             agents[i].learn(init_cor[i])
         init_cor = get_cors(meshgrid, agents, args.beta)
         plot(meshgrid, agents, _)
+        plot_sigma(meshgrid, agents, _)

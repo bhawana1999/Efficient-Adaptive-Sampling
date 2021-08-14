@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.random import default_rng
 from ar_agent_mod import AR_agent
 from env import env_sample
 from mpl_toolkits.mplot3d import Axes3D
@@ -27,6 +28,8 @@ class mesh():
         self.visited = []
         self.sampled_depths = []
 
+        self.occupied_coordinates=[]
+
     def update_mesh(self):
         mu = self.mu.copy()
         sigma = self.sigma.copy()
@@ -35,6 +38,9 @@ class mesh():
         
         self.meshgrid[2] = mu
         self.meshgrid[3] = sigma
+
+    def clean(self):
+        self.occupied_coordinates = []
 
 
 def plot(meshgrid, agent, n_sample):
@@ -52,6 +58,21 @@ def plot(meshgrid, agent, n_sample):
     plt.savefig(directory+"/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
     # plt.show()
 
+def plot_sigma(meshgrid, agent, n_sample):
+    fig = plt.figure(figsize=(10, 10))
+    # ax = Axes3D(fig)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_wireframe(meshgrid.meshgrid[0], meshgrid.meshgrid[1],
+                      meshgrid.sigma.reshape(meshgrid.meshgrid[0].shape), alpha=0.5, color='g')
+    ax.set_zlim3d(0, 2)
+    markers = ['o', '^', 's']
+    color = ['black', 'lightcoral', 'magenta']
+    for idx in range(len(agent)):
+        ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited],  c=color[idx],
+                   marker=markers[idx], alpha=1.0, s=70)
+    plt.savefig(directory+"_sigma/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
+    # plt.show()
+
 
 
 if __name__=="__main__":
@@ -62,7 +83,7 @@ if __name__=="__main__":
                         default=20, type=int)
     parser.add_argument("--n_agents", help="number of agents", default=3, type=int)
     parser.add_argument("--beta", help="hyperparameter that dictates exploration vs. exploitation", 
-                        default=100., type=float)
+                        default=500., type=float)
     parser.add_argument("--thresh_gain", help="threshold for information gain", default=0.50, type=float)
     parser.add_argument("--thresh_loss", help="threshold for information loss", default=0.25, type=float)
     parser.add_argument("--del_rad", help="change to be made in the radius", default=4, type=int)
@@ -73,9 +94,14 @@ if __name__=="__main__":
 
     directory = "output/" + args.name + "_samples_" + str(args.n)\
                 if args.name != None else "output/" + "samples_" + str(args.n)
-    os.makedirs(directory, exist_ok = True)
 
-    init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
+    directory_sigma = "output/" + args.name + "_samples_" + str(args.n)+"_sigma"\
+                if args.name != None else "output/" + "samples_" + str(args.n)+"_sigma"
+    os.makedirs(directory, exist_ok = True)
+    os.makedirs(directory_sigma, exist_ok=True)
+
+    # init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
+    init_cor = [[-3, -3], [0, -3], [2.9, -3]]
 
     meshgrid = mesh()
     agents = []
@@ -87,8 +113,10 @@ if __name__=="__main__":
     
     
     for sample in range(args.n):
+        # print(sample)
         preds = []
         truths = []
+        meshgrid.clean()
         for i in range(args.n_agents):
             predicted, gt = agents[i].learn(init_cor[i])
             preds.append(predicted)
@@ -98,10 +126,13 @@ if __name__=="__main__":
             init_cor = []
             for i in range(args.n_agents):
                 init_cor.append(agents[i].get_next_coordinates())
+                # print(init_cor[-1])
 
         else:
             init_cor = []
             for i in range(args.n_agents):
                 agents[i].update_radius(preds[i], truths[i])
                 init_cor.append(agents[i].get_next_coordinates())
+                # print(init_cor[-1])
         plot(meshgrid, agents, sample)
+        plot_sigma(meshgrid, agents, sample)
