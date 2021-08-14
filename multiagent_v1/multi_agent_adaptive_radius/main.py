@@ -45,6 +45,7 @@ class mesh():
 
 def plot(meshgrid, agent, n_sample):
     fig = plt.figure(figsize=(10, 10))
+    # ax = Axes3D(fig)
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_wireframe(meshgrid.meshgrid[0], meshgrid.meshgrid[1],
                       meshgrid.mu.reshape(meshgrid.meshgrid[0].shape), alpha=0.5, color='g')
@@ -52,9 +53,13 @@ def plot(meshgrid, agent, n_sample):
                       env_sample(meshgrid.meshgrid), alpha=0.5, color='b')
     markers = ['o', '^', 's']
     color = ['black', 'lightcoral', 'magenta']
+    # for idx, a in enumerate(agent):
+    #     ax.scatter([x[0] for x in a.visited], [x[1] for x in a.visited], a.sampled_depths, c=color[idx],
+    #                marker=markers[idx], alpha=1.0)
     for idx in range(len(agent)):
         ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], agent[idx].sampled_depths, c=color[idx],
                    marker=markers[idx], alpha=1.0, s=70)
+    plt.title("Iteration "+str(n_sample)+" Prediction vs. ground truth")
     plt.savefig(directory+"/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
     # plt.show()
 
@@ -68,8 +73,9 @@ def plot_sigma(meshgrid, agent, n_sample):
     markers = ['o', '^', 's']
     color = ['black', 'lightcoral', 'magenta']
     for idx in range(len(agent)):
-        ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited],  c=color[idx],
+        ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], c=color[idx],
                    marker=markers[idx], alpha=1.0, s=70)
+    plt.title("Iteration "+str(n_sample)+" Standard deviation")
     plt.savefig(directory+"_sigma/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
     # plt.show()
 

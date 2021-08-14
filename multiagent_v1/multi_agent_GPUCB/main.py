@@ -39,6 +39,7 @@ def plot(meshgrid, agent, n_sample):
     for idx in range(len(agent)):
         ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], agent[idx].sampled_depths, c=color[idx],
                    marker=markers[idx], alpha=1.0, s=70)
+    plt.title("Iteration "+str(n_sample)+" Prediction vs. ground truth")
     plt.savefig(directory+"/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
     # plt.show()
 
@@ -54,6 +55,7 @@ def plot_sigma(meshgrid, agent, n_sample):
     for idx in range(len(agent)):
         ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], c=color[idx],
                    marker=markers[idx], alpha=1.0, s=70)
+    plt.title("Iteration "+str(n_sample)+" Standard deviation")
     plt.savefig(directory+"_sigma/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
     # plt.show()
 
@@ -117,8 +119,8 @@ if __name__ == "__main__":
     os.makedirs(directory, exist_ok = True)
     os.makedirs(directory_sigma, exist_ok=True)
 
-    init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
-    # init_cor = [[-3, -3], [0, -3], [2.9, -3]]
+    # init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
+    init_cor = [[-3, -3], [0, -3], [2.9, -3]]
 
     meshgrid = mesh()
     agents = []
