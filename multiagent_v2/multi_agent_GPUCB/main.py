@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.random import default_rng
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, RBF
 from env import env_sample
@@ -9,57 +10,6 @@ import argparse
 import os
 import warnings
 
-###### Code to find if 2 line segments intersect ######
-# https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-
-
-class Point:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-
-def onSegment(p, q, r):
-    if ((q.x <= max(p.x, r.x)) and (q.x >= min(p.x, r.x)) and
-            (q.y <= max(p.y, r.y)) and (q.y >= min(p.y, r.y))):
-        return True
-    return False
-
-
-def orientation(p, q, r):
-    val = (float(q.y - p.y) * (r.x - q.x)) - (float(q.x - p.x) * (r.y - q.y))
-    if (val > 0):
-        return 1
-    elif (val < 0):
-        return 2
-    else:
-        return 0
-
-
-def doIntersect(p1, q1, p2, q2):
-    o1 = orientation(p1, q1, p2)
-    o2 = orientation(p1, q1, q2)
-    o3 = orientation(p2, q2, p1)
-    o4 = orientation(p2, q2, q1)
-
-    if ((o1 != o2) and (o3 != o4)):
-        return True
-
-    if ((o1 == 0) and onSegment(p1, p2, q1)):
-        return True
-
-    if ((o2 == 0) and onSegment(p1, q2, q1)):
-        return True
-
-    if ((o3 == 0) and onSegment(p2, p1, q2)):
-        return True
-
-    if ((o4 == 0) and onSegment(p2, q1, q2)):
-        return True
-
-    return False
-###### Code to find if 2 line segments intersect ######
-
 
 class mesh:
     def __init__(self):
@@ -69,6 +19,8 @@ class mesh:
         self.grid = np.c_[self.meshgrid[0].ravel(), self.meshgrid[1].ravel()]
         self.mu = np.zeros(self.grid.shape[0])
         self.sigma = 0.5 * np.ones(self.grid.shape[0])
+        self.visited = []
+        self.sampled_depths = []
 
 
 def plot(meshgrid, agent, n_sample):
@@ -81,20 +33,34 @@ def plot(meshgrid, agent, n_sample):
                       env_sample(meshgrid.meshgrid), alpha=0.5, color='b')
     markers = ['o', '^', 's']
     color = ['black', 'lightcoral', 'magenta']
-    for idx, a in enumerate(agent):
-        ax.scatter([x[0] for x in a.visited], [x[1] for x in a.visited], a.sampled_depths, c=color[idx],
-                   marker=markers[idx], alpha=1.0)
-    plt.savefig(directory+"/"+str(n_sample)+".png")
+    # for idx, a in enumerate(agent):
+    #     ax.scatter([x[0] for x in a.visited], [x[1] for x in a.visited], a.sampled_depths, c=color[idx],
+    #                marker=markers[idx], alpha=1.0)
+    for idx in range(len(agent)):
+        ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], agent[idx].sampled_depths, c=color[idx],
+                   marker=markers[idx], alpha=1.0, s=70)
+    plt.title("Iteration "+str(n_sample)+" Prediction vs. ground truth")
+    plt.savefig(directory+"/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
+    # plt.show()
+
+def plot_sigma(meshgrid, agent, n_sample):
+    fig = plt.figure(figsize=(10, 10))
+    # ax = Axes3D(fig)
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_wireframe(meshgrid.meshgrid[0], meshgrid.meshgrid[1],
+                      meshgrid.sigma.reshape(meshgrid.meshgrid[0].shape), alpha=0.5, color='g')
+    ax.set_zlim3d(0, 2)
+    markers = ['o', '^', 's']
+    color = ['black', 'lightcoral', 'magenta']
+    for idx in range(len(agent)):
+        ax.scatter([x[0] for x in agent[idx].visited], [x[1] for x in agent[idx].visited], c=color[idx],
+                   marker=markers[idx], alpha=1.0, s=70)
+    plt.title("Iteration "+str(n_sample)+" Standard deviation")
+    plt.savefig(directory+"_sigma/"+str(n_sample)+".png", bbox_inches='tight',pad_inches = 0)
     # plt.show()
 
 
-def get_cors(agents, cors):
-    pos = []
-    for a in agents:
-        pos.append(a.visited[-1])
-
-
-
+def get_cors(meshgrid, agents, beta):
     grid = meshgrid.grid.copy()
     mu = meshgrid.mu.copy()
     sigma = meshgrid.sigma.copy()
@@ -108,7 +74,28 @@ def get_cors(agents, cors):
         for __ in range(2000):
             mu[np.argmax(mu + sigma * np.sqrt(beta))] = np.NINF
 
+    cor = allocate_cors(agents, cor)
+
     return cor
+
+
+def allocate_cors(agents, cors):
+    n = len(agents)
+    dist_mat = np.zeros((n,n))
+    for i in range(n):
+        for j in range(n):
+            x, y = cors[j][0], cors[j][1]
+            X, Y = agents[i].visited[-1][0], agents[i].visited[-1][1]
+            dist_mat[i][j] = np.hypot(x-X, y-Y)
+
+    new_cor = [0]*n
+    for _ in range(n):
+        i, j = np.unravel_index(dist_mat.argmin(), dist_mat.shape)
+        new_cor[i] = cors[j]
+        dist_mat[i,:] = 1e6
+        dist_mat[:,j] = 1e6
+    
+    return new_cor
 
 
 if __name__ == "__main__":
@@ -127,19 +114,24 @@ if __name__ == "__main__":
 
     directory = "output/" + args.name + "_samples_" + str(args.n)\
                 if args.name != None else "output/" + "samples_" + str(args.n)
-    os.makedirs(directory, exist_ok=True)
+    directory_sigma = "output/" + args.name + "_samples_" + str(args.n)+"_sigma"\
+                if args.name != None else "output/" + "samples_" + str(args.n)+"_sigma"
+    os.makedirs(directory, exist_ok = True)
+    os.makedirs(directory_sigma, exist_ok=True)
 
-    init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
+    # init_cor = [[-3, -3], [-2.5, -3], [-2, -3]]
+    init_cor = [[-3, -3], [0, -3], [2.9, -3]]
 
     meshgrid = mesh()
     agents = []
-    for i in range(3):
-        agents.append(GPUCB_agent(mesh=meshgrid, env_sample=env_sample,
-                      beta=args.beta, n_samples=args.n, directory=directory))
+    for i in range(args.n_agents):
+        agents.append(GPUCB_agent(mesh=meshgrid, env_sample=env_sample, beta=args.beta, n_samples=args.n, directory=directory))
 
     for _ in range(args.n):
-        returned_cors = []
-        for i in range(len(agents)):
-            returned_cors.append(agents[i].learn(init_cor[i]))
-        init_cor = get_cors(agents, returned_cors)
+        rng = default_rng()
+        idxs = rng.choice(3, size=3, replace=False)
+        for i in idxs:
+            agents[i].learn(init_cor[i])
+        init_cor = get_cors(meshgrid, agents, args.beta)
         plot(meshgrid, agents, _)
+        plot_sigma(meshgrid, agents, _)
