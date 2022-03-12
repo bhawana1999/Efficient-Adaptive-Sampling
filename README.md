@@ -1,6 +1,4 @@
-# Gaussian-Process
-Gaussian Process Regression
+# Adaptive Sampling on the go for bathymetry mapping
 
-Gaussian processes are a powerful algorithm for both regression and classification. Their greatest practical advantage is that they can give a reliable estimate of their own uncertainty.
+This repository contains implementation and results of adaptive sampling algorithms for bathymetry mapping of lakes an ponds.
 
-A Gaussian process is a probability distribution over possible functions.
