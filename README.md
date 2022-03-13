@@ -14,3 +14,5 @@ We propose few modifications of the existing GP-UCB algorithm to optimize the se
 - **Results** : Contains results of all these algorithms, specifically trajectory length, error in estimation, and computation time of the algorithm.
 - **Testing_with_RealLakeData**:  Contains results of trajectory length, error in estimation, and computation time for real lake data.
   - **lake**:  Contains real lake dataset
+
+Results - https://docs.google.com/spreadsheets/d/1MZyKEKiKYIyyV0GqOMyHChOsHtY8b_Y6iAttEfBZM5c/edit?usp=sharing
