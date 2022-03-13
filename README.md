@@ -2,7 +2,7 @@
 
 This repository contains implementation and results of adaptive sampling algorithms for bathymetry mapping of lakes an ponds. 
 
-We propose few modifications of the existing GP-UCB algorithm to optimize the sensing task.
+We propose few modifications of the existing GP-UCB algorithm to optimize the sensing task. Visit Project Page - https://sites.google.com/umass.edu/adaptive-sampling/home
 
 ## Project Directory Tree
 - **ExplorationVsExploitation** : Contains implementation of different exploration versus exploitation trade-off algorithms and gaussian process regression.
